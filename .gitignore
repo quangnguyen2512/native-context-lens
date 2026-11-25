@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.local
+dist/
+build/
+*.egg-info/
+.DS_Store
+Thumbs.db
+
+# Local application scripts (keep private, do not push)
+LOOM_SCRIPTS_AND_APPLICATION.md
+APPLY_*.md
+LOOM_SCRIPTS*.md
+SUBMISSION*.md

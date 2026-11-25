@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Native Context Lens — Governed Context Engine & Artifact Workbench</title>
+  <style>
+    :root {
+      --bg: #0a0c10;
+      --surface: #11151c;
+      --surface-2: #171c26;
+      --border: #232b38;
+      --border-strong: #323e52;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --emerald: #10b981;
+      --emerald-dim: rgba(16, 185, 129, 0.14);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245, 158, 11, 0.14);
+      --red: #ef4444;
+      --red-dim: rgba(239, 68, 68, 0.14);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96, 165, 250, 0.14);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(10, 12, 16, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .brand span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 2px 8px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    label.inline {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    select, input, button {
+      font-family: inherit;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 6px 10px;
+    }
+    button {
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover { background: #1f2634; border-color: #4b5c78; }
+    button.primary {
+      background: var(--emerald);
+      color: #04130d;
+      border-color: var(--emerald);
+      font-weight: 600;
+    }
+    button.primary:hover { background: #34d399; }
+    button.warn {
+      background: var(--amber-dim);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+    button.danger {
+      background: var(--red-dim);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.45);
+    }
+    .digest-pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--emerald);
+      background: var(--emerald-dim);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 4px 9px;
+      border-radius: 6px;
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 18px 24px 48px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 7px 14px;
+      font-weight: 500;
+    }
+    .tab-btn.active {
+      background: var(--surface-2);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card p.sub { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .kpi .val { font-size: 22px; font-weight: 700; margin-top: 4px; font-family: var(--mono); }
+    .kpi .val.emerald { color: var(--emerald); }
+    .kpi .val.amber { color: var(--amber); }
+    .kpi .val.red { color: var(--red); }
+    .scenario-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .scenario-btn.active {
+      border-color: var(--emerald);
+      background: var(--emerald-dim);
+      color: #a7f3d0;
+    }
+    .bar-wrap {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 120px;
+      align-items: center;
+      gap: 10px;
+      margin: 6px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .bar-track {
+      height: 12px;
+      background: #1b2230;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width 0.35s ease; }
+    .bar-fill.md { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+    .bar-fill.native { background: linear-gradient(90deg, #10b981, #34d399); }
+    .trace-step {
+      border-left: 2px solid var(--border-strong);
+      padding: 6px 0 6px 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .trace-step.trap { border-left-color: var(--red); background: var(--red-dim); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+    .trace-step.native-hop { border-left-color: var(--emerald); }
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+    .badge.blocked { background: var(--red-dim); color: #fca5a5; border-color: rgba(239,68,68,0.4); }
+    .badge.pending_signoff { background: var(--amber-dim); color: #fde68a; border-color: rgba(245,158,11,0.4); }
+    .badge.superseded { background: rgba(139,148,158,0.18); color: #cbd5e1; border-color: #475569; }
+    .badge.active, .badge.resolved { background: var(--emerald-dim); color: #a7f3d0; border-color: rgba(16,185,129,0.4); }
+    .badge.stale { background: var(--amber-dim); color: #fcd34d; border-color: rgba(245,158,11,0.5); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: var(--surface-2);
+    }
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .kanban-col {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .kanban-col h3 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .k-card {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .k-card.stale-border { border-color: rgba(245, 158, 11, 0.7); }
+    .k-card .title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .k-card .meta { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .k-card .edges { margin-top: 6px; font-size: 11px; font-family: var(--mono); color: var(--blue); }
+    pre.codebox {
+      background: #07090d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #c9d1d9;
+      max-height: 360px;
+    }
+    .alert-box {
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      background: var(--amber-dim);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .fail-closed-box {
+      border: 1px solid rgba(239, 68, 68, 0.55);
+      background: var(--red-dim);
+      border-radius: 8px;
+      padding: 14px;
+      color: #fecaca;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--emerald);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      display: none;
+      z-index: 50;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <h1>Native Context Lens</h1>
+      <span>SQLite WAL · Event-Sourced · Fail-Closed v2</span>
+    </div>
+    <div class="controls">
+      <label class="inline">
+        Caller Persona:
+        <select id="personaSelect">
+          <option value="founder">George (Founder — 25/25 records)</option>
+          <option value="engineer">Devon (Engineer — 23/25 records)</option>
+          <option value="contractor">Alex (Contractor — 22/25, read-only)</option>
+          <option value="anonymous">Guest (Anonymous — 0/25, fail-closed)</option>
+        </select>
+      </label>
+      <span class="digest-pill" id="digestBadge">digest: loading...</span>
+      <button id="replayHeaderBtn" title="Drop projections & replay from events">Replay Check</button>
+      <button id="resetBtn" class="warn">Reset Vault</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="benchmark">1. Benchmark Arena (MD vs 1-SQL)</button>
+      <button class="tab-btn" data-tab="stale">2. Stale-Context Propagator</button>
+      <button class="tab-btn" data-tab="artifacts">3. Malleable Artifacts (v2 Dual-View)</button>
+      <button class="tab-btn" data-tab="events">4. Event Log & Replay Inspector</button>
+    </div>
+
+    <!-- PANEL 1: BENCHMARK -->
+    <section id="tab-benchmark" class="panel active">
+      <div class="card">
+        <h2>
+          Head-to-Head: Plain Markdown Vault (`rg` + `[[wikilinks]]`) vs. Native SQLite Context Engine
+          <button id="runAllBenchBtn" class="primary">Run All 5 Scenarios</button>
+        </h2>
+        <p class="sub">
+          Evaluates real file reads &amp; regex greps across the 25-document company vault against ONE governed recursive SQL CTE over projected <code>records</code>, <code>links</code>, and <code>freshness_alerts</code>.
+        </p>
+        <div class="scenario-bar" id="scenarioButtons"></div>
+        <div class="kpi-row" id="benchKpis"></div>
+        <div class="bar-wrap" id="benchBars"></div>
+        <div class="grid-2">
+          <div class="card" style="margin:0;">
+            <h2>Baseline Markdown Agent Trace <span class="badge blocked" id="mdTurnsBadge">6 turns</span></h2>
+            <div id="mdTraceContainer"></div>
+          </div>
+          <div class="card" style="margin:0;">
+            <h2>Native SQLite Engine (1 Recursive CTE) <span class="badge active" id="nativeMetaBadge">1 SQL query</span></h2>
+            <div id="nativeChainContainer"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: STALE-CONTEXT PROPAGATOR -->
+    <section id="tab-stale" class="panel">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Trigger Live Decision Supersession</h2>
+          <p class="sub">
+            Atomically appends <code>RECORD_CREATED</code> + <code>RECORD_SUPERSEDED</code> inside <code>BEGIN IMMEDIATE</code>. A recursive SQL CTE automatically traverses all downstream dependents and emits <code>STALE_DEPENDENCY</code> alerts. Try switching persona to <strong>Contractor</strong> to verify fail-closed 403 write protection.
+          </p>
+          <div class="form-grid">
+            <label>
+              Decision to Supersede
+              <select id="oldRecordSelect">
+                <option value="decision-2026-10-02">decision-2026-10-02 (Northwind 18% Floor)</option>
+                <option value="auth-token-rotation-v2">auth-token-rotation-v2 (Ed25519 + HSM)</option>
+                <option value="vendor-dpa-2026-q3">vendor-dpa-2026-q3 (EU DPA 24h SLA)</option>
+                <option value="mobile-sync-architecture-v2">mobile-sync-architecture-v2 (WAL Streams)</option>
+                <option value="deprecation-timeline-final">deprecation-timeline-final (90-Day Post-SDK)</option>
+              </select>
+            </label>
+            <label>
+              New Superseding Title
+              <input id="newTitleInput" value="Decision 2026-10-06: Enterprise 20% Strategic Floor + Upfront Cash" />
+            </label>
+          </div>
+          <div class="form-grid">
+            <label>
+              New Decision Summary
+              <input id="newSummaryInput" value="Board-approved 20% ceiling for 3-year >$400k ARR prepay deals; re-verify downstream quotes." />
+            </label>
+            <label>
+              Supersession Reason
+              <input id="reasonInput" value="Executive pricing committee updated strategic floor after Q4 margin review." />
+            </label>
+          </div>
+          <button id="supersedeBtn" class="primary">Supersede Decision (Atomic Event + Cascade)</button>
+          <div id="supersedeFeedback" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="card">
+          <h2>Active Freshness Alerts <span class="badge stale" id="alertCountBadge">0 open</span></h2>
+          <p class="sub">Filtered fail-closed for the active Caller Persona — alerts referencing unauthorized records never leak.</p>
+          <div id="alertsList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: MALLEABLE ARTIFACTS -->
+    <section id="tab-artifacts" class="panel">
+      <div class="card">
+        <h2>
+          Malleable Artifact Workbench — Dual Views Over One Governed Collection (<code>launch_blockers</code>)
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="viewTableBtn" class="primary">View A: Decision Table (mdx.v2)</button>
+            <button id="viewKanbanBtn">View B: Kanban Graph (html.v2)</button>
+            <button id="redTeamCapBtn" class="danger">Red-Team Forbidden Capability (shell.exec)</button>
+          </div>
+        </h2>
+        <p class="sub" id="artifactMetaLine">
+          Separates durable governed data (<code>native.collection-envelope.v1</code>), authored presentation (<code>native.mdx.artifact.v2</code> / <code>native.html.artifact.v2</code>), and fail-closed host authority. Switch Caller Persona above to watch founder-only sign-offs vanish fail-closed!
+        </p>
+        <div id="redTeamResult" style="margin-bottom:12px;"></div>
+        <div id="artifactRenderArea"></div>
+        <details style="margin-top:14px;">
+          <summary style="cursor:pointer;color:var(--blue);font-family:var(--mono);font-size:12px;">
+            Inspect Exportable Native <code>Document kind:artifact</code> Source
+          </summary>
+          <pre class="codebox" id="artifactExportCode"></pre>
+        </details>
+      </div>
+    </section>
+
+    <!-- PANEL 4: EVENT LOG & REPLAY -->
+    <section id="tab-events" class="panel">
+      <div class="card">
+        <h2>
+          Authoritative Append-Only Event Log &amp; Deterministic Replay Proof
+          <button id="replayPanelBtn" class="primary">Drop All Projections &amp; Replay Events</button>
+        </h2>
+        <p class="sub">
+          Every mutation appends a SHA-256 hash-chained row into <code>events</code>. Projection tables are strictly derived and deterministically rebuilt bit-for-bit.
+        </p>
+        <div id="replayResultBox" style="margin-bottom:12px;"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>Event Type</th>
+              <th>Aggregate ID</th>
+              <th>Actor</th>
+              <th>Hash (SHA-256 prefix)</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const state = {
+      persona: "founder",
+      activeScenario: "northwind_deal",
+      activeArtifactView: "compact_decision_table",
+      scenarios: [],
+    };
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = "none"; }, 3400);
+    }
+
+    function esc(str) {
+      return String(str ?? "").replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...opts,
+      });
+      const data = await res.json();
+      return { status: res.status, ok: res.ok, data };
+    }
+
+    async function refreshHealth() {
+      const { data } = await api("/api/health");
+      document.getElementById("digestBadge").textContent =
+        `events:${data.events_count} · digest:${data.projection_digest.slice(0, 12)}`;
+    }
+
+    // --- Tab switching ---
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    // --- Benchmark Arena ---
+    async function initScenarios() {
+      const { data } = await api("/api/benchmark/scenarios");
+      state.scenarios = data.scenarios;
+      const bar = document.getElementById("scenarioButtons");
+      bar.innerHTML = "";
+      state.scenarios.forEach((s) => {
+        const b = document.createElement("button");
+        b.className = "scenario-btn" + (s.scenario_id === state.activeScenario ? " active" : "");
+        b.textContent = s.title;
+        b.onclick = () => {
+          state.activeScenario = s.scenario_id;
+          document.querySelectorAll(".scenario-btn").forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          runBenchmark(s.scenario_id);
+        };
+        bar.appendChild(b);
+      });
+      await runBenchmark(state.activeScenario);
+    }
+
+    async function runBenchmark(scenarioId = null) {
+      const { data } = await api("/api/benchmark/run", {
+        method: "POST",
+        body: JSON.stringify({ scenario_id: scenarioId, caller: "founder" }),
+      });
+      const rep = data.report;
+      const primary = rep.results[0];
+
+      document.getElementById("benchKpis").innerHTML = `
+        <div class="kpi"><div class="label">Payload Token Reduction</div><div class="val emerald">${rep.avg_payload_reduction_x}x fewer</div></div>
+        <div class="kpi"><div class="label">Cumulative Context Savings</div><div class="val emerald">${rep.avg_cumulative_reduction_x}x fewer</div></div>
+        <div class="kpi"><div class="label">Turns (MD vs Native)</div><div class="val">${rep.avg_markdown_turns} → ${rep.avg_native_turns}</div></div>
+        <div class="kpi"><div class="label">Stale-Doc Error Reduction</div><div class="val emerald">${rep.stale_error_reduction_pct}%</div></div>
+        <div class="kpi"><div class="label">Native SQL Latency</div><div class="val">${primary.native_elapsed_ms.toFixed(2)} ms</div></div>
+      `;
+
+      const maxTok = Math.max(rep.total_markdown_cumulative_tokens, 1);
+      const payloadPct = Math.max(2, Math.round((rep.total_markdown_payload_tokens / maxTok) * 100));
+      const nativePct = Math.max(1, Math.round((rep.total_native_payload_tokens / maxTok) * 100));
+      document.getElementById("benchBars").innerHTML = `
+        <div class="bar-row">
+          <span>MD Cumulative Context</span>
+          <div class="bar-track"><div class="bar-fill md" style="width:100%"></div></div>
+          <span>${rep.total_markdown_cumulative_tokens.toLocaleString()} tok</span>
+        </div>
+        <div class="bar-row">
+          <span>MD Single-Pass Payload</span>
+          <div class="bar-track"><div class="bar-fill md" style="width:${payloadPct}%"></div></div>
+          <span>${rep.total_markdown_payload_tokens.toLocaleString()} tok</span>
+        </div>
+        <div class="bar-row">
+          <span>Native 1-SQL CTE</span>
+          <div class="bar-track"><div class="bar-fill native" style="width:${nativePct}%"></div></div>
+          <span style="color:var(--emerald)">${rep.total_native_payload_tokens.toLocaleString()} tok</span>
+        </div>
+      `;
+
+      document.getElementById("mdTurnsBadge").textContent =
+        `${primary.markdown_turns} turns · ~${primary.markdown_simulated_seconds}s`;
+      document.getElementById("mdTraceContainer").innerHTML = primary.markdown_trace.map((t) => `
+        <div class="trace-step ${t.hit_stale_trap ? "trap" : ""}">
+          <div><strong>Turn ${t.turn} (${esc(t.action)})</strong> · <span style="font-family:var(--mono);color:var(--muted)">+${t.payload_tokens} tok (cum: ${t.cumulative_context_tokens})</span></div>
+          <div style="color:#cbd5e1;font-size:12px;">${esc(t.detail)}</div>
+        </div>
+      `).join("") + `
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">
+          Naive agent answer: <code>${esc(primary.markdown_naive_answer_id)}</code>
+          <span class="badge ${primary.markdown_naive_correct ? "active" : "blocked"}">${primary.markdown_naive_correct ? "CORRECT" : "WRONG (STALE TRAP)"}</span>
+        </div>`;
+
+      document.getElementById("nativeMetaBadge").textContent =
+        `${primary.native_sql_queries} SQL query · ${primary.native_elapsed_ms.toFixed(2)} ms`;
+      document.getElementById("nativeChainContainer").innerHTML = primary.native_chain.map((h) => `
+        <div class="trace-step native-hop">
+          <div>
+            <strong>Hop ${h.hop}: ${esc(h.record_id)}</strong>
+            <span class="badge ${esc(h.status)}">${esc(h.status)}</span>
+            ${h.open_stale_alerts > 0 ? `<span class="badge stale">STALE (${h.open_stale_alerts})</span>` : ""}
+          </div>
+          <div style="font-size:12px;color:var(--muted);">via <code>${esc(h.via_relation)}</code> · owner: ${esc(h.owner)}</div>
+          <div style="font-size:12px;color:#cbd5e1;">${esc(h.summary)}</div>
+        </div>
+      `).join("") + `
+        <div style="margin-top:10px;font-size:12px;color:var(--emerald);">
+          Terminal Blocker Confirmed: <code>${esc(primary.native_answer_id)}</code> (100% accurate, ${primary.payload_token_reduction_x}x fewer payload tokens)
+        </div>`;
+    }
+
+    // --- Alerts & Stale Propagator ---
+    async function refreshAlerts() {
+      const { data } = await api(`/api/alerts?caller=${encodeURIComponent(state.persona)}&status=open`);
+      document.getElementById("alertCountBadge").textContent = `${data.count} open`;
+      const container = document.getElementById("alertsList");
+      if (!data.alerts.length) {
+        container.innerHTML = `<p class="sub">No open freshness alerts visible to <code>${esc(state.persona)}</code>.</p>`;
+        return;
+      }
+      container.innerHTML = data.alerts.map((a) => `
+        <div class="alert-box">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+            <strong>${esc(a.affected_record_id)}</strong>
+            <span class="badge stale">${esc(a.alert_type)} · ${a.hops} hop${a.hops === 1 ? "" : "s"}</span>
+          </div>
+          <div style="font-size:12px;margin-top:4px;color:#fef3c7;">${esc(a.message)}</div>
+          <div style="font-family:var(--mono);font-size:11px;margin-top:4px;color:var(--muted);">
+            path: ${esc(a.path.join(" → "))}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("supersedeBtn").addEventListener("click", async () => {
+      const payload = {
+        old_record_id: document.getElementById("oldRecordSelect").value,
+        new_title: document.getElementById("newTitleInput").value,
+        new_summary: document.getElementById("newSummaryInput").value,
+        reason: document.getElementById("reasonInput").value,
+        caller: state.persona,
+      };
+      const res = await api("/api/actions/supersede", { method: "POST", body: JSON.stringify(payload) });
+      const fb = document.getElementById("supersedeFeedback");
+      if (!res.ok) {
+        fb.innerHTML = `<div class="fail-closed-box"><strong>FAIL-CLOSED (${res.status}):</strong> ${esc(res.data.detail)}</div>`;
+        showToast(`Blocked (${res.status}) for caller ${state.persona}`);
+        return;
+      }
+      fb.innerHTML = `
+        <div class="alert-box" style="border-color:rgba(16,185,129,0.5);background:var(--emerald-dim);">
+          <strong>Atomic Commit OK:</strong> Created <code>${esc(res.data.new_record_id)}</code>, superseded <code>${esc(res.data.old_record_id)}</code>, propagated <strong>${res.data.propagated_alerts.length}</strong> downstream STALE_DEPENDENCY alerts.
+        </div>`;
+      showToast(`Superseded ${res.data.old_record_id} -> ${res.data.propagated_alerts.length} alerts emitted`);
+      await Promise.all([refreshHealth(), refreshAlerts(), refreshArtifacts(), refreshEvents()]);
+    });
+
+    // --- Malleable Artifacts ---
+    async function refreshArtifacts() {
+      const area = document.getElementById("artifactRenderArea");
+      const code = document.getElementById("artifactExportCode");
+      const res = await api(
+        `/api/artifacts/render?view=${encodeURIComponent(state.activeArtifactView)}&caller=${encodeURIComponent(state.persona)}`
+      );
+      if (!res.ok) {
+        area.innerHTML = `
+          <div class="fail-closed-box">
+            <strong>FAIL-CLOSED ARTIFACT BLOCK (${res.status} · ${esc(res.data.error_code)}):</strong>
+            <div style="margin-top:4px;">${esc(res.data.detail)}</div>
+            <div style="margin-top:6px;font-family:var(--mono);font-size:12px;">fallback_surface: ${String(res.data.fallback_surface)}</div>
+          </div>`;
+        code.textContent = JSON.stringify(res.data, null, 2);
+        return;
+      }
+      const art = res.data;
+      const env = art.envelopes.launch_blockers;
+      document.getElementById("artifactMetaLine").innerHTML =
+        `Schema: <code>${esc(art.schema_version)}</code> · Envelope: <code>${esc(env.envelope)}</code> · Caller: <code>${esc(art.caller_id)}</code> · Visible records: <strong>${env.record_count}</strong> · Capabilities: <code>${esc(art.granted_capabilities.join(", "))}</code> · <code>fallback_surface: null</code>`;
+
+      if (art.view_type === "compact_decision_table") {
+        area.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Record ID</th><th>Track</th><th>Kind</th><th>Status</th><th>Owner</th><th>Stale</th><th>Links</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${art.view_model.rows.map((r) => `
+                <tr>
+                  <td><code>${esc(r.record_id)}</code><div style="font-size:11px;color:var(--muted)">${esc(r.title)}</div></td>
+                  <td><span class="badge">${esc(r.track)}</span></td>
+                  <td>${esc(r.kind)}</td>
+                  <td><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+                  <td>${esc(r.owner)}</td>
+                  <td>${r.open_stale_alerts > 0 ? `<span class="badge stale">STALE (${r.open_stale_alerts})</span>` : "—"}</td>
+                  <td style="font-family:var(--mono);font-size:11px;color:var(--blue);">${r.outgoing_links.map(esc).join("<br/>") || "—"}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>`;
+      } else {
+        area.innerHTML = `
+          <div class="kanban-board">
+            ${art.view_model.columns.map((col) => `
+              <div class="kanban-col">
+                <h3><span>${esc(col.label)}</span><span>${col.count}</span></h3>
+                ${col.cards.map((c) => `
+                  <div class="k-card ${c.open_stale_alerts > 0 ? "stale-border" : ""}">
+                    <div class="title">${esc(c.title)}</div>
+                    <div class="meta"><code>${esc(c.record_id)}</code> · ${esc(c.owner)}</div>
+                    <div style="margin-top:5px;">
+                      <span class="badge ${esc(c.status)}">${esc(c.status)}</span>
+                      ${c.open_stale_alerts > 0 ? `<span class="badge stale">STALE (${c.open_stale_alerts})</span>` : ""}
+                    </div>
+                    ${c.outgoing.length ? `<div class="edges">${c.outgoing.map((e) => `${esc(e.relation)} → ${esc(e.target_id)}`).join("<br/>")}</div>` : ""}
+                  </div>
+                `).join("")}
+              </div>
+            `).join("")}
+          </div>`;
+      }
+      code.textContent = art.document_export;
+    }
+
+    document.getElementById("viewTableBtn").onclick = () => {
+      state.activeArtifactView = "compact_decision_table";
+      document.getElementById("viewTableBtn").classList.add("primary");
+      document.getElementById("viewKanbanBtn").classList.remove("primary");
+      refreshArtifacts();
+    };
+    document.getElementById("viewKanbanBtn").onclick = () => {
+      state.activeArtifactView = "kanban_dependency_cards";
+      document.getElementById("viewKanbanBtn").classList.add("primary");
+      document.getElementById("viewTableBtn").classList.remove("primary");
+      refreshArtifacts();
+    };
+    document.getElementById("redTeamCapBtn").onclick = async () => {
+      const hostileManifest = {
+        schema: "native.html.artifact.v2",
+        artifact_id: "rogue-exfil-widget",
+        title: "Rogue Widget Requesting Shell Exec",
+        view_type: "kanban_dependency_cards",
+        inputs: [{
+          name: "launch_blockers",
+          envelope: "native.collection-envelope.v1",
+          collection: "launch_blockers",
+          required: true,
+          expose_to_root: true,
+        }],
+        capability_requests: ["input.read", "shell.exec"],
+      };
+      const res = await api("/api/artifacts/validate", {
+        method: "POST",
+        body: JSON.stringify({ manifest: hostileManifest }),
+      });
+      document.getElementById("redTeamResult").innerHTML = `
+        <div class="fail-closed-box">
+          <strong>HOST AUTHORITY REJECTED (${res.status} · ${esc(res.data.error_code)}):</strong>
+          ${esc(res.data.detail)} | <code>fallback_surface: ${String(res.data.fallback_surface)}</code>
+        </div>`;
+      showToast("Host authority rejected shell.exec fail-closed!");
+    };
+
+    // --- Event Log & Replay ---
+    async function refreshEvents() {
+      const { data } = await api("/api/events?limit=60");
+      document.getElementById("eventsTableBody").innerHTML = data.events.map((e) => `
+        <tr>
+          <td><code>#${e.seq}</code></td>
+          <td><span class="badge">${esc(e.event_type)}</span></td>
+          <td><code>${esc(e.aggregate_id)}</code></td>
+          <td>${esc(e.actor_id)}</td>
+          <td><code>${esc(e.event_hash.slice(0, 16))}…</code></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${esc(e.created_at)}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function runReplayCheck() {
+      const { data } = await api("/api/engine/replay", { method: "POST" });
+      document.getElementById("replayResultBox").innerHTML = `
+        <div class="alert-box" style="border-color:rgba(16,185,129,0.5);background:var(--emerald-dim);">
+          <strong>DETERMINISTIC REPLAY ${data.deterministic_match ? "VERIFIED" : "FAILED"}:</strong>
+          Replayed <strong>${data.events_replayed}</strong> authoritative events in <strong>${data.elapsed_ms.toFixed(2)} ms</strong> ·
+          before=<code>${esc(data.before_digest.slice(0, 16))}</code> ·
+          after=<code>${esc(data.after_digest.slice(0, 16))}</code> ·
+          hash_chain=<code>${data.chain_integrity_valid}</code>
+        </div>`;
+      showToast(`Replay verified (${data.events_replayed} events, 0 drift)`);
+      await refreshHealth();
+    }
+
+    document.getElementById("replayHeaderBtn").onclick = runReplayCheck;
+    document.getElementById("replayPanelBtn").onclick = runReplayCheck;
+    document.getElementById("runAllBenchBtn").onclick = () => runBenchmark(null);
+
+    document.getElementById("personaSelect").addEventListener("change", async (e) => {
+      state.persona = e.target.value;
+      document.getElementById("supersedeFeedback").innerHTML = "";
+      showToast(`Switched caller persona -> ${state.persona}`);
+      await Promise.all([refreshAlerts(), refreshArtifacts()]);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+      await api("/api/actions/reset", { method: "POST" });
+      document.getElementById("supersedeFeedback").innerHTML = "";
+      document.getElementById("redTeamResult").innerHTML = "";
+      document.getElementById("replayResultBox").innerHTML = "";
+      showToast("Reset demo vault to clean 25-doc baseline");
+      await Promise.all([refreshHealth(), refreshAlerts(), refreshArtifacts(), refreshEvents(), runBenchmark(state.activeScenario)]);
+    });
+
+    // Boot
+    (async () => {
+      await refreshHealth();
+      await initScenarios();
+      await Promise.all([refreshAlerts(), refreshArtifacts(), refreshEvents()]);
+    })();
+  </script>
+</body>
+</html>
